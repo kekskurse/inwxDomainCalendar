@@ -1,3 +1,4 @@
 config.cfg
 *.pyc
 domains.ical
+script.sh

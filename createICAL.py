@@ -19,27 +19,39 @@ def main():
     if 'tfa' in loginRet and loginRet['tfa'] == 'GOOGLE-AUTH':
         loginRet = inwx_conn.account.unlock({'tan': getOTP(shared_secret)})
 
-    domainList = inwx_conn.domain.list({})
-    for domain in domainList["resData"]["domain"]:
-         reDate = dateutil.parser.parse(str(domain["reDate"]))
-         upDate = dateutil.parser.parse(str(domain["upDate"]))
+    page = 1
+    pageLimit = 20
+    runLoop = True
 
-         preReData = (reDate - datetime.timedelta(days = 5))
+    while runLoop:
+        print("Page: "+str(page))
+        domainList = inwx_conn.domain.list({'page': page, 'pagelimit': pageLimit})
+        if(pageLimit * page < domainList["resData"]["count"] ):
+            page = page + 1
+        else:
+            runLoop = False
 
-         event = Event()
-         event.add('summary', 'REMINDER! Domain Renewal '+domain["domain"])
-         event.add('dtstart', preReData)
-         event.add('dtend', (preReData + datetime.timedelta(minutes = 10)))
-         event.add('dtstamp', upDate)
-         cal.add_component(event)
+        print(domainList)
+        for domain in domainList["resData"]["domain"]:
+            reDate = dateutil.parser.parse(str(domain["reDate"]))
+            upDate = dateutil.parser.parse(str(domain["upDate"]))
 
-         event = Event()
-         event.add('summary', 'Domain Renewal '+domain["domain"])
-         event.add('dtstart', reDate)
-         event.add('dtend', (reDate + datetime.timedelta(minutes = 10)))
-         event.add('dtstamp', upDate)
-         cal.add_component(event)
-         print(event)
+            preReData = (reDate - datetime.timedelta(days = 5))
+
+            event = Event()
+            event.add('summary', 'REMINDER! Domain Renewal '+domain["domain"])
+            event.add('dtstart', preReData)
+            event.add('dtend', (preReData + datetime.timedelta(minutes = 10)))
+            event.add('dtstamp', upDate)
+            cal.add_component(event)
+
+            event = Event()
+            event.add('summary', 'Domain Renewal '+domain["domain"])
+            event.add('dtstart', reDate)
+            event.add('dtend', (reDate + datetime.timedelta(minutes = 10)))
+            event.add('dtstamp', upDate)
+            cal.add_component(event)
+
     f = open('domains.ical', 'wb')
     f.write(cal.to_ical())
     f.close()
